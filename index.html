@@ -42,7 +42,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
   <section id="editor" class="escondido">
     <div id="conta">
       <span id="usuario"></span>
-      <button class="secundario" id="sair" type="button">Sair</button>
+      <button class="secundario" id="sair" type="button">Encerrar edição</button>
     </div>
     <form id="form">
       <input id="cmd" placeholder="novo comando, ex: !bomdia" autocomplete="off" required maxlength="30" aria-label="Novo comando">
@@ -51,7 +51,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
   </section>
 
   <div id="loginBox">
-    <button class="secundario" id="entrar" type="button">Login de editor</button>
+    <button class="secundario" id="entrar" type="button">Editar sons</button>
   </div>
   <p id="status">Carregando sons...</p>
   <p id="aviso" role="status"></p>
@@ -62,6 +62,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 <script>
 const SUPABASE_URL = "https://hgvsltbmhoxvlogqrstl.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MYWVy2tcROpQE_FXoXELdg_v7R8LQgC";
+// Conta interna compartilhada. A senha mestra nunca fica salva no código do site.
+const EDITOR_EMAIL = "sons-da-dinda-editor@example.com";
 
 const SONS = `10mil abafa calar elevoltou big eunaoaceito exacly meautosabotei morreu naovainao seliga surto
 uiquedelicia verdade voupracasa euadoro elanaovemmais sugardaddy apagaisso partiuaglomerar trindom pagode
@@ -104,8 +106,8 @@ function render() {
   $('sons').replaceChildren(...SONS.map(n => botao(n)));
   $('novos').replaceChildren(...NOVOS_INICIAIS.map(n => botao(n)), ...extras.map(n => botao(n, true)));
   $('editor').classList.toggle('escondido', !podeEditar);
-  $('loginBox').classList.toggle('escondido', !!usuarioAtual);
-  $('usuario').textContent = usuarioAtual ? `Conectado: ${usuarioAtual.email}` : '';
+  $('loginBox').classList.toggle('escondido', !!podeEditar);
+  $('usuario').textContent = usuarioAtual ? 'Edição liberada nesta sessão' : '';
 }
 
 async function carregarExtras() {
@@ -125,7 +127,7 @@ async function atualizarSessao() {
     podeEditar = !error && autorizado === true;
   }
   render();
-  if (usuarioAtual && !podeEditar) aviso('Seu e-mail ainda não está autorizado a editar.');
+  if (usuarioAtual && !podeEditar) aviso('Esta conta ainda não está autorizada a editar.');
 }
 
 async function iniciar() {
@@ -136,7 +138,9 @@ async function iniciar() {
     $('novos').replaceChildren(...NOVOS_INICIAIS.map(n => botao(n)));
     return;
   }
-  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {persistSession:false, autoRefreshToken:true, detectSessionInUrl:false}
+  });
   await atualizarSessao();
   await carregarExtras();
   sbClient.auth.onAuthStateChange(async () => {
@@ -150,10 +154,12 @@ async function iniciar() {
 }
 
 $('entrar').onclick = async () => {
-  const email = prompt('Digite seu e-mail autorizado:');
-  if (!email) return;
-  const {error} = await sbClient.auth.signInWithOtp({email:email.trim(), options:{emailRedirectTo:location.href}});
-  aviso(error ? 'Erro ao enviar link: ' + error.message : 'Enviamos um link de acesso para seu e-mail.');
+  if (!sbClient) return aviso('O serviço de edição não está configurado.');
+  const senha = prompt('Digite a senha mestra para editar os sons:');
+  if (senha === null || !senha) return;
+  const {error} = await sbClient.auth.signInWithPassword({email:EDITOR_EMAIL, password:senha});
+  if (error) return aviso('Senha mestra inválida ou serviço indisponível.');
+  aviso('Edição liberada.');
 };
 $('sair').onclick = async () => { await sbClient.auth.signOut(); aviso('Você saiu da conta.'); };
 $('form').onsubmit = async e => {
