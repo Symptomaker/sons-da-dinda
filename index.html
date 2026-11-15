@@ -99,12 +99,12 @@
 <div class="wrap">
   <h1 class="titulo">Sons da live da Dinda</h1>
   <section class="painel">
-    <h2 class="etiqueta">Sons da live da Dinda</h2>
-    <div class="grade" id="sons"><p class="vazio">Carregando…</p></div>
-  </section>
-  <section class="painel">
     <h2 class="etiqueta azul">Novos sons</h2>
     <div class="grade novo" id="novos"></div>
+  </section>
+  <section class="painel">
+    <h2 class="etiqueta">Sons da live da Dinda</h2>
+    <div class="grade" id="sons"><p class="vazio">Carregando…</p></div>
   </section>
   <section id="editor" hidden>
     <div id="conta"><span id="usuario">Edição liberada nesta sessão</span><button class="secundario" id="trocarSenha" type="button">Trocar senha mestra</button><button class="secundario" id="sair" type="button">Encerrar edição</button></div>
@@ -203,7 +203,7 @@ async function carregarSons() {
     $('status').textContent = 'Não foi possível carregar a lista compartilhada.'; console.error(error, legacy.error); return;
   }
   sonsLista = [...itensLocais(), ...(legacy.data || []).map((x,i) => ({nome:x.nome,secao:'novos',ordem:10000+i}))];
-  listaEditavel = false; render(); $('status').textContent = 'Lista visível. Falta atualizar o banco para editar os sons.';
+  listaEditavel = false; render(); $('status').textContent = 'Lista visível. Falta atualizar o banco de dados para editar os sons.';
 }
 async function atualizarSessao() {
   const {data} = await sbClient.auth.getSession(); usuarioAtual = data.session?.user || null; podeEditar = false;
