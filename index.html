@@ -69,12 +69,12 @@ peixe calma orianna taric vayne pediu socorro naodoeu mentira bixa tira doendo d
 voucagar barraco pintam milreais pix naotenho dois queen fimdomundo mulher perae fazendomerda eladisseisso
 grito ai gogogo ahh gemidao morra rezando eoutra ahri coco para vemca starmie peidao euquero mami meperdoa
 sumir oxente vergonha balao fogo scat chanel tratando limpatudo alivia gata mendiga violento possofalar
-loira autoestima`.split(/\\s+/);
-const NOVOS_INICIAIS = `ajoelhar vagabunda eai carreira orar ganhou sotemgay parabens buceta aplausos gemido meusqueridos fodase`.split(/\\s+/);
+loira autoestima`.split(/\s+/);
+const NOVOS_INICIAIS = `ajoelhar vagabunda eai carreira orar ganhou sotemgay parabens buceta aplausos gemido meusqueridos fodase`.split(/\s+/);
 
 const $ = id => document.getElementById(id);
 const aviso = t => $('aviso').textContent = t;
-let supabase = null, extras = [], usuarioAtual = null, podeEditar = false;
+let sbClient = null, extras = [], usuarioAtual = null, podeEditar = false;
 
 function botao(nome, apagavel=false) {
   const b = document.createElement('button');
@@ -91,7 +91,7 @@ function botao(nome, apagavel=false) {
     x.onclick = async e => {
       e.stopPropagation();
       if (!confirm(`Remover !${nome} da lista compartilhada?`)) return;
-      const {error} = await supabase.from('sons_extras').delete().eq('nome', nome);
+      const {error} = await sbClient.from('sons_extras').delete().eq('nome', nome);
       if (error) aviso('Erro ao remover: ' + error.message);
       else { aviso(`!${nome} removido`); await carregarExtras(); }
     };
@@ -109,7 +109,7 @@ function render() {
 }
 
 async function carregarExtras() {
-  const {data,error} = await supabase.from('sons_extras').select('nome').order('criado_em', {ascending:true});
+  const {data,error} = await sbClient.from('sons_extras').select('nome').order('criado_em', {ascending:true});
   if (error) { $('status').textContent = 'Não foi possível carregar a lista compartilhada.'; console.error(error); return; }
   extras = (data || []).map(x => x.nome);
   render();
@@ -117,11 +117,11 @@ async function carregarExtras() {
 }
 
 async function atualizarSessao() {
-  const {data} = await supabase.auth.getSession();
+  const {data} = await sbClient.auth.getSession();
   usuarioAtual = data.session?.user || null;
   podeEditar = false;
   if (usuarioAtual) {
-    const {data: autorizado, error} = await supabase.rpc('pode_editar_sons');
+    const {data: autorizado, error} = await sbClient.rpc('pode_editar_sons');
     podeEditar = !error && autorizado === true;
   }
   render();
@@ -136,15 +136,15 @@ async function iniciar() {
     $('novos').replaceChildren(...NOVOS_INICIAIS.map(n => botao(n)));
     return;
   }
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   await atualizarSessao();
   await carregarExtras();
-  supabase.auth.onAuthStateChange(async () => {
+  sbClient.auth.onAuthStateChange(async () => {
     await atualizarSessao();
     await carregarExtras();
   });
   // Atualização em tempo real para todos os visitantes.
-  supabase.channel('sons-compartilhados')
+  sbClient.channel('sons-compartilhados')
     .on('postgres_changes', {event:'*',schema:'public',table:'sons_extras'}, carregarExtras)
     .subscribe();
 }
@@ -152,17 +152,17 @@ async function iniciar() {
 $('entrar').onclick = async () => {
   const email = prompt('Digite seu e-mail autorizado:');
   if (!email) return;
-  const {error} = await supabase.auth.signInWithOtp({email:email.trim(), options:{emailRedirectTo:location.href}});
+  const {error} = await sbClient.auth.signInWithOtp({email:email.trim(), options:{emailRedirectTo:location.href}});
   aviso(error ? 'Erro ao enviar link: ' + error.message : 'Enviamos um link de acesso para seu e-mail.');
 };
-$('sair').onclick = async () => { await supabase.auth.signOut(); aviso('Você saiu da conta.'); };
+$('sair').onclick = async () => { await sbClient.auth.signOut(); aviso('Você saiu da conta.'); };
 $('form').onsubmit = async e => {
   e.preventDefault();
   if (!podeEditar) return aviso('Você não tem permissão para adicionar sons.');
-  const nome = $('cmd').value.trim().toLowerCase().replace(/^!+/, '').replace(/\\s+/g, '');
+  const nome = $('cmd').value.trim().toLowerCase().replace(/^!+/, '').replace(/\s+/g, '');
   if (!/^[a-z0-9_áàâãéèêíìîóòôõúùûç]+$/i.test(nome)) return aviso('Use apenas letras, números e underline.');
   if ([...SONS,...NOVOS_INICIAIS,...extras].includes(nome)) return aviso(`!${nome} já existe.`);
-  const {error} = await supabase.from('sons_extras').insert({nome});
+  const {error} = await sbClient.from('sons_extras').insert({nome});
   if (error) return aviso(error.code === '23505' ? `!${nome} já existe.` : 'Erro ao adicionar: ' + error.message);
   $('cmd').value = ''; aviso(`!${nome} adicionado à lista compartilhada.`); await carregarExtras();
 };
