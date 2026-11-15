@@ -124,7 +124,7 @@
 // O GitHub Pages hospeda esta página estática; a lista e a autenticação ficam no Supabase.
 const SUPABASE_URL = "https://hgvsltbmhoxvlogqrstl.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MYWVy2tcROpQE_FXoXELdg_v7R8LQgC";
-const EDITOR_EMAIL = "sons-da-dinda-editor@example.com";
+const EDITOR_EMAIL = "yneto88@gmail.com";
 
 const SONS_INICIAIS = `10mil abafa calar elevoltou big eunaoaceito exacly meautosabotei morreu naovainao seliga surto
 uiquedelicia verdade voupracasa euadoro elanaovemmais sugardaddy apagaisso partiuaglomerar trindom pagode
@@ -203,7 +203,7 @@ async function carregarSons() {
     $('status').textContent = 'Não foi possível carregar a lista compartilhada.'; console.error(error, legacy.error); return;
   }
   sonsLista = [...itensLocais(), ...(legacy.data || []).map((x,i) => ({nome:x.nome,secao:'novos',ordem:10000+i}))];
-  listaEditavel = false; render(); $('status').textContent = 'Lista visível. Falta atualizar o banco de dados para editar os sons.';
+  listaEditavel = false; render(); $('status').textContent = 'Lista visível. Falta atualizar o banco para editar os sons.';
 }
 async function atualizarSessao() {
   const {data} = await sbClient.auth.getSession(); usuarioAtual = data.session?.user || null; podeEditar = false;
