@@ -14,10 +14,11 @@ body{margin:0;min-height:100vh;padding:16px;font-family:Fredoka,sans-serif;color
 .placa span{color:var(--pink);text-shadow:3px 3px 0 #fff,5px 5px 0 #5e3416}
 .placa.novos{color:var(--yellow)}
 .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.som{position:relative;padding:8px 6px;border:2px solid var(--wood-dark);border-radius:8px;background:linear-gradient(#f8d9a6,var(--wood));box-shadow:0 3px 0 var(--wood-dark);font:600 17px Fredoka,sans-serif;color:var(--ink);cursor:pointer;text-align:center;overflow-wrap:anywhere;min-height:42px}
+.som{position:relative;padding:8px 6px;border:2px solid var(--wood-dark);border-radius:8px;background:linear-gradient(#f8d9a6,var(--wood));box-shadow:0 3px 0 var(--wood-dark);font:600 17px Fredoka,sans-serif;color:var(--ink);cursor:pointer;text-align:center;overflow-wrap:normal;word-break:normal;min-height:42px}
 .som:active{transform:translateY(2px);box-shadow:0 1px 0 var(--wood-dark)}
 .novo .som{background:linear-gradient(#fff07a,var(--yellow));border-color:#d1a900;box-shadow:0 3px 0 #d1a900}
-.som-label{display:block;padding:2px 16px}
+.som-label{display:block;padding:2px 8px;white-space:nowrap;overflow-wrap:normal;font-size:clamp(13px,1vw,16px)}
+.som-label.longa{font-size:13px;letter-spacing:-.2px}
 .som-control{position:absolute;top:-8px;width:24px;height:24px;border-radius:50%;border:2px solid #fff4df;color:#fff;font-size:16px;font-weight:700;cursor:pointer;line-height:18px;padding:0;z-index:1}
 .apagar{right:-8px;background:#d33}
 .mover{left:-8px;background:#198754}
@@ -99,7 +100,8 @@ function botao(item) {
   b.className = 'som'; b.setAttribute('role', 'button'); b.tabIndex = 0;
   b.title = 'Clique para copiar';
   const label = document.createElement('span');
-  label.className = 'som-label'; label.textContent = '!' + item.nome;
+  label.className = 'som-label' + (item.nome.length >= 13 ? ' longa' : '');
+  label.textContent = '!' + item.nome;
   b.append(label);
   b.onclick = e => { if (!e.target.closest('.som-control')) copiarSom(item.nome); };
   b.onkeydown = e => {
