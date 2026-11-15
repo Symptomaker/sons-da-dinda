@@ -119,7 +119,7 @@
     <div class="grade" id="sons"><p class="vazio">Carregando…</p></div>
   </section>
   <section id="editor" hidden>
-    <div id="conta"><span id="usuario">Edição liberada nesta sessão</span><button class="secundario" id="trocarSenha" type="button">Trocar senha mestra</button><button class="secundario" id="sair" type="button">Encerrar edição</button></div>
+    <div id="conta"><span id="usuario">Edição liberada nesta sessão</span><button class="secundario" id="sair" type="button">Encerrar edição</button></div>
     <form id="form">
       <input id="cmd" placeholder="novo comando, ex: !bomdia" autocomplete="off" required maxlength="30" aria-label="Novo comando">
       <select id="secao" aria-label="Seção"><option value="novos">em Novos sons</option><option value="live">em Sons da live da Dinda</option></select>
@@ -249,23 +249,6 @@ $('entrar').onclick = async () => {
   aviso('Edição liberada.');
 };
 $('sair').onclick = async () => { await sbClient.auth.signOut(); aviso('Você saiu da conta.'); };
-$('trocarSenha').onclick = async () => {
-  const atual = prompt('Confirme a senha mestra atual:');
-  if (atual === null || !atual) return;
-  const nova = prompt('Digite a nova senha mestra (mínimo 8 caracteres):');
-  if (nova === null) return;
-  if (nova.length < 8) return aviso('A nova senha precisa ter pelo menos 8 caracteres.');
-  const confirmacao = prompt('Digite a nova senha novamente para confirmar:');
-  if (confirmacao === null) return;
-  if (nova !== confirmacao) return aviso('As senhas novas não conferem.');
-
-  const {error: reauthError} = await sbClient.auth.signInWithPassword({email:EDITOR_EMAIL, password:atual});
-  if (reauthError) return aviso('Senha atual incorreta.');
-  const {error} = await sbClient.auth.updateUser({password:nova});
-  if (error) return aviso('Não foi possível trocar a senha: ' + error.message);
-  await sbClient.auth.signOut();
-  aviso('Senha alterada. Entre novamente usando a nova senha.');
-};
 $('recoveryForm').onsubmit = async e => {
   e.preventDefault();
   const nova = $('recoveryPassword').value;
