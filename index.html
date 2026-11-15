@@ -59,6 +59,9 @@
   .apagar { right: -8px; background: #d33; }
   .mover { left: -8px; background: #198754; }
   #editor { margin: 22px auto 8px; max-width: 760px; padding: 14px; background: rgba(253, 247, 230, .82); border: 2px solid var(--laranja-esc); border-radius: 12px; }
+  #recoveryBox { margin: 22px auto; max-width: 560px; padding: 18px; background: rgba(253, 247, 230, .95); border: 3px solid var(--laranja); border-radius: 12px; box-shadow: 0 4px 0 var(--laranja-esc); }
+  #recoveryBox h2, #recoveryBox p { text-align: center; margin: 6px 0 12px; }
+  #recoveryForm input { flex: 1 1 100%; max-width: none; }
   #conta, form { display: flex; gap: 8px; justify-content: center; align-items: center; margin: 12px 0 8px; flex-wrap: wrap; }
   input, select {
     padding: 10px 12px; font: 400 17px 'Bree Serif', Georgia, serif;
@@ -97,6 +100,15 @@
 <span class="deco grande" style="left:46%;bottom:8px;transform:rotate(8deg)"><svg width="34" height="30"><use href="#concha"/></svg></span>
 
 <div class="wrap">
+  <section id="recoveryBox" hidden>
+    <h2>Definir nova senha mestra</h2>
+    <p>Digite e confirme a nova senha. Ela precisa ter pelo menos 8 caracteres.</p>
+    <form id="recoveryForm">
+      <input id="recoveryPassword" type="password" placeholder="Nova senha" autocomplete="new-password" minlength="8" required aria-label="Nova senha">
+      <input id="recoveryPasswordConfirm" type="password" placeholder="Confirme a nova senha" autocomplete="new-password" minlength="8" required aria-label="Confirme a nova senha">
+      <button class="add" type="submit">Salvar nova senha</button>
+    </form>
+  </section>
   <h1 class="titulo">Sons da live da Dinda</h1>
   <section class="painel">
     <h2 class="etiqueta azul">Novos sons</h2>
@@ -136,7 +148,7 @@ loira autoestima`.split(/\s+/);
 const NOVOS_INICIAIS = `ajoelhar vagabunda eai carreira orar ganhou sotemgay parabens buceta aplausos gemido meusqueridos fodase`.split(/\s+/);
 const $ = id => document.getElementById(id);
 const aviso = texto => $('aviso').textContent = texto;
-let sbClient = null, sonsLista = [], usuarioAtual = null, podeEditar = false, listaEditavel = false;
+let sbClient = null, sonsLista = [], usuarioAtual = null, podeEditar = false, listaEditavel = false, modoRecuperacao = false;
 
 function itensLocais() {
   return [...SONS_INICIAIS.map((nome, i) => ({nome, secao:'live', ordem:i + 1})),
@@ -188,8 +200,9 @@ function render() {
   if (!botoesLive.length) botoesLive.push(Object.assign(document.createElement('p'), {className:'vazio', textContent:'Nenhum som aqui ainda'}));
   if (!botoesNovos.length) botoesNovos.push(Object.assign(document.createElement('p'), {className:'vazio', textContent:'Nenhum som aqui ainda'}));
   $('sons').replaceChildren(...botoesLive); $('novos').replaceChildren(...botoesNovos);
-  $('editor').hidden = !(podeEditar && listaEditavel);
-  $('entrar').hidden = !!podeEditar;
+  $('editor').hidden = modoRecuperacao || !(podeEditar && listaEditavel);
+  $('entrar').hidden = modoRecuperacao || !!podeEditar;
+  $('recoveryBox').hidden = !modoRecuperacao;
   $('adicionar').disabled = !listaEditavel;
 }
 async function carregarSons() {
@@ -213,9 +226,19 @@ async function atualizarSessao() {
   else if (usuarioAtual && !listaEditavel) aviso('Atualize o banco de dados para habilitar a edição da lista.');
 }
 async function iniciar() {
-  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:false, autoRefreshToken:true, detectSessionInUrl:false}});
+  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:false, autoRefreshToken:true, detectSessionInUrl:true}});
+  sbClient.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      modoRecuperacao = true; render();
+      $('status').textContent = 'Link de recuperação confirmado. Defina sua nova senha abaixo.';
+      window.scrollTo({top:0, behavior:'smooth'});
+      return;
+    }
+    if (['SIGNED_IN','SIGNED_OUT','INITIAL_SESSION','TOKEN_REFRESHED','USER_UPDATED'].includes(event)) {
+      setTimeout(async () => { await atualizarSessao(); await carregarSons(); }, 0);
+    }
+  });
   await atualizarSessao(); await carregarSons();
-  sbClient.auth.onAuthStateChange(async () => { await atualizarSessao(); await carregarSons(); });
   sbClient.channel('sons-compartilhados').on('postgres_changes', {event:'*',schema:'public',table:'sons_lista'}, carregarSons).subscribe();
 }
 $('entrar').onclick = async () => {
@@ -242,6 +265,22 @@ $('trocarSenha').onclick = async () => {
   if (error) return aviso('Não foi possível trocar a senha: ' + error.message);
   await sbClient.auth.signOut();
   aviso('Senha alterada. Entre novamente usando a nova senha.');
+};
+$('recoveryForm').onsubmit = async e => {
+  e.preventDefault();
+  const nova = $('recoveryPassword').value;
+  const confirmacao = $('recoveryPasswordConfirm').value;
+  if (nova.length < 8) return aviso('A nova senha precisa ter pelo menos 8 caracteres.');
+  if (nova !== confirmacao) return aviso('As senhas novas não conferem.');
+  const {error} = await sbClient.auth.updateUser({password:nova});
+  if (error) return aviso('Não foi possível redefinir a senha: ' + error.message);
+  modoRecuperacao = false;
+  $('recoveryPassword').value = ''; $('recoveryPasswordConfirm').value = '';
+  history.replaceState(null, '', location.pathname + location.search);
+  await sbClient.auth.signOut();
+  render();
+  $('status').textContent = 'Senha redefinida com sucesso. Entre usando a nova senha.';
+  aviso('Senha mestra redefinida.');
 };
 $('form').onsubmit = async e => {
   e.preventDefault();
