@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sons da Live da Dinda</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Fredoka:wght@600&display=swap">
+<style>
+:root{--wood:#f3c98b;--wood-dark:#c98b45;--ink:#3b2412;--yellow:#ffe14d;--pink:#ff5fa2}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:16px;font-family:Fredoka,sans-serif;color:var(--ink);background:linear-gradient(100deg,transparent 88%,#7fd3e8 92%,#2bb5d6 100%),radial-gradient(circle at 20% 30%,#fbe7c0,#f1d39a 70%)}
+.wrap{max-width:1200px;margin:0 auto}
+.placa{display:block;width:fit-content;margin:8px auto 20px;padding:10px 32px;background:linear-gradient(#a8693a,#7d4a24);border:4px solid #5e3416;border-radius:14px;font:400 clamp(26px,5vw,56px) 'Luckiest Guy',cursive;color:#fff6e0;text-shadow:3px 3px 0 #5e3416;box-shadow:0 6px 0 #5e3416;text-align:center}
+.placa span{color:var(--pink);text-shadow:3px 3px 0 #fff,5px 5px 0 #5e3416}
+.placa.novos{color:var(--yellow)}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.som{position:relative;padding:8px 6px;border:2px solid var(--wood-dark);border-radius:8px;background:linear-gradient(#f8d9a6,var(--wood));box-shadow:0 3px 0 var(--wood-dark);font:600 17px Fredoka,sans-serif;color:var(--ink);cursor:pointer;text-align:center;overflow-wrap:anywhere;min-height:42px}
+.som:active{transform:translateY(2px);box-shadow:0 1px 0 var(--wood-dark)}
+.novo .som{background:linear-gradient(#fff07a,var(--yellow));border-color:#d1a900;box-shadow:0 3px 0 #d1a900}
+.apagar{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:0;background:#d33;color:#fff;font-weight:700;cursor:pointer;line-height:22px;padding:0}
+#editor{margin:22px auto 8px;max-width:720px;padding:14px;background:#fff4dfb8;border:2px solid var(--wood-dark);border-radius:12px}
+#form{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+input{flex:1 1 220px;min-width:0;padding:10px 12px;font:600 17px Fredoka,sans-serif;border:2px solid var(--wood-dark);border-radius:8px;background:#fffaf0}
+button.add{padding:10px 18px;font:400 20px 'Luckiest Guy',cursive;color:#fff;cursor:pointer;background:var(--pink);border:2px solid #c2337a;border-radius:8px;box-shadow:0 3px 0 #c2337a}
+button:disabled{opacity:.55;cursor:not-allowed}
+#aviso{text-align:center;min-height:1.4em;margin:10px 0 0}
+#conta{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin:12px 0}
+#loginBox{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.secundario{padding:8px 12px;border:1px solid #7d4a24;border-radius:8px;background:#fff4df;color:var(--ink);font:600 15px Fredoka;cursor:pointer}
+#status{font-size:14px;text-align:center;min-height:1.2em}
+.escondido{display:none!important}
+@media(max-width:480px){body{padding:10px}.placa{padding:9px 18px}.grade{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="placa">Sons da live da <span>Dinda</span></h1>
+  <div class="grade" id="sons"></div>
+  <h2 class="placa novos">Novos sons</h2>
+  <div class="grade novo" id="novos"></div>
+
+  <section id="editor" class="escondido">
+    <div id="conta">
+      <span id="usuario"></span>
+      <button class="secundario" id="sair" type="button">Sair</button>
+    </div>
+    <form id="form">
+      <input id="cmd" placeholder="novo comando, ex: !bomdia" autocomplete="off" required maxlength="30" aria-label="Novo comando">
+      <button class="add" id="adicionar" type="submit">Adicionar</button>
+    </form>
+  </section>
+
+  <div id="loginBox">
+    <button class="secundario" id="entrar" type="button">Login de editor</button>
+  </div>
+  <p id="status">Carregando sons...</p>
+  <p id="aviso" role="status"></p>
+</div>
+
+<!-- Configure a URL e a chave anon/public do seu projeto Supabase aqui. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://hgvsltbmhoxvlogqrstl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_MYWVy2tcROpQE_FXoXELdg_v7R8LQgC";
+
+const SONS = `10mil abafa calar elevoltou big eunaoaceito exacly meautosabotei morreu naovainao seliga surto
+uiquedelicia verdade voupracasa euadoro elanaovemmais sugardaddy apagaisso partiuaglomerar trindom pagode
+peixe calma orianna taric vayne pediu socorro naodoeu mentira bixa tira doendo desumano pau explodir queodio
+voucagar barraco pintam milreais pix naotenho dois queen fimdomundo mulher perae fazendomerda eladisseisso
+grito ai gogogo ahh gemidao morra rezando eoutra ahri coco para vemca starmie peidao euquero mami meperdoa
+sumir oxente vergonha balao fogo scat chanel tratando limpatudo alivia gata mendiga violento possofalar
+loira autoestima`.split(/\\s+/);
+const NOVOS_INICIAIS = `ajoelhar vagabunda eai carreira orar ganhou sotemgay parabens buceta aplausos gemido meusqueridos fodase`.split(/\\s+/);
+
+const $ = id => document.getElementById(id);
+const aviso = t => $('aviso').textContent = t;
+let supabase = null, extras = [], usuarioAtual = null, podeEditar = false;
+
+function botao(nome, apagavel=false) {
+  const b = document.createElement('button');
+  b.className = 'som'; b.type = 'button'; b.textContent = '!' + nome;
+  b.title = 'Clique para copiar';
+  b.onclick = async () => {
+    try { await navigator.clipboard.writeText('!' + nome); aviso(`!${nome} copiado`); }
+    catch { aviso('Não foi possível copiar. Verifique a permissão do navegador.'); }
+  };
+  if (apagavel && podeEditar) {
+    const x = document.createElement('button');
+    x.className = 'apagar'; x.type = 'button'; x.textContent = '×'; x.title = 'Remover som';
+    x.setAttribute('aria-label', 'Remover !' + nome);
+    x.onclick = async e => {
+      e.stopPropagation();
+      if (!confirm(`Remover !${nome} da lista compartilhada?`)) return;
+      const {error} = await supabase.from('sons_extras').delete().eq('nome', nome);
+      if (error) aviso('Erro ao remover: ' + error.message);
+      else { aviso(`!${nome} removido`); await carregarExtras(); }
+    };
+    b.append(x);
+  }
+  return b;
+}
+
+function render() {
+  $('sons').replaceChildren(...SONS.map(n => botao(n)));
+  $('novos').replaceChildren(...NOVOS_INICIAIS.map(n => botao(n)), ...extras.map(n => botao(n, true)));
+  $('editor').classList.toggle('escondido', !podeEditar);
+  $('loginBox').classList.toggle('escondido', !!usuarioAtual);
+  $('usuario').textContent = usuarioAtual ? `Conectado: ${usuarioAtual.email}` : '';
+}
+
+async function carregarExtras() {
+  const {data,error} = await supabase.from('sons_extras').select('nome').order('criado_em', {ascending:true});
+  if (error) { $('status').textContent = 'Não foi possível carregar a lista compartilhada.'; console.error(error); return; }
+  extras = (data || []).map(x => x.nome);
+  render();
+  $('status').textContent = 'Lista sincronizada.';
+}
+
+async function atualizarSessao() {
+  const {data} = await supabase.auth.getSession();
+  usuarioAtual = data.session?.user || null;
+  podeEditar = false;
+  if (usuarioAtual) {
+    const {data: autorizado, error} = await supabase.rpc('pode_editar_sons');
+    podeEditar = !error && autorizado === true;
+  }
+  render();
+  if (usuarioAtual && !podeEditar) aviso('Seu e-mail ainda não está autorizado a editar.');
+}
+
+async function iniciar() {
+  if (SUPABASE_URL.startsWith('COLE_AQUI') || SUPABASE_ANON_KEY.startsWith('COLE_AQUI')) {
+    $('status').textContent = 'Site ainda não configurado: adicione as credenciais do Supabase no arquivo.';
+    // A lista fixa continua visível mesmo antes da configuração.
+    $('sons').replaceChildren(...SONS.map(n => botao(n)));
+    $('novos').replaceChildren(...NOVOS_INICIAIS.map(n => botao(n)));
+    return;
+  }
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  await atualizarSessao();
+  await carregarExtras();
+  supabase.auth.onAuthStateChange(async () => {
+    await atualizarSessao();
+    await carregarExtras();
+  });
+  // Atualização em tempo real para todos os visitantes.
+  supabase.channel('sons-compartilhados')
+    .on('postgres_changes', {event:'*',schema:'public',table:'sons_extras'}, carregarExtras)
+    .subscribe();
+}
+
+$('entrar').onclick = async () => {
+  const email = prompt('Digite seu e-mail autorizado:');
+  if (!email) return;
+  const {error} = await supabase.auth.signInWithOtp({email:email.trim(), options:{emailRedirectTo:location.href}});
+  aviso(error ? 'Erro ao enviar link: ' + error.message : 'Enviamos um link de acesso para seu e-mail.');
+};
+$('sair').onclick = async () => { await supabase.auth.signOut(); aviso('Você saiu da conta.'); };
+$('form').onsubmit = async e => {
+  e.preventDefault();
+  if (!podeEditar) return aviso('Você não tem permissão para adicionar sons.');
+  const nome = $('cmd').value.trim().toLowerCase().replace(/^!+/, '').replace(/\\s+/g, '');
+  if (!/^[a-z0-9_áàâãéèêíìîóòôõúùûç]+$/i.test(nome)) return aviso('Use apenas letras, números e underline.');
+  if ([...SONS,...NOVOS_INICIAIS,...extras].includes(nome)) return aviso(`!${nome} já existe.`);
+  const {error} = await supabase.from('sons_extras').insert({nome});
+  if (error) return aviso(error.code === '23505' ? `!${nome} já existe.` : 'Erro ao adicionar: ' + error.message);
+  $('cmd').value = ''; aviso(`!${nome} adicionado à lista compartilhada.`); await carregarExtras();
+};
+
+iniciar();
+</script>
+</body>
+</html>
